@@ -1,0 +1,63 @@
+.overlay-wrapper {
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 20, 0.95); /* Slightly darker for better readability */
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.2);
+    transition: opacity 0.5s ease-in-out;
+    z-index: 10; /* Ensure overlays are above the 3D canvas */
+}
+
+.overlay-text h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.overlay-text p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    opacity: 1; /* Ensure text is fully visible */
+}
+
+button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+    margin: 10px auto; /* Center buttons properly */
+}
+
+button:hover {
+    background: #45a049;
+}
+#simulation-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 150px; /* Pushes scene lower */
+}
+
+#magneticFieldOverlay {
+    display: none;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}

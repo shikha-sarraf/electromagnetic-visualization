@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Visualization</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="section" id="electricField"></div>
+    <div class="section" id="magneticField"></div>
+    <div class="section" id="emWave"></div>
+    <div id="overlayContainer"></div>
+
+    <label>Frequency: <input type="range" id="freqSlider" min="0.5" max="5" step="0.1" value="1"></label>
+    <span id="freqValue">1 Hz</span>
+    
+    <label>Wavelength: <input type="range" id="waveSlider" min="1" max="10" step="0.1" value="2"></label>
+    <span id="waveValue">4</span>
+
+    <script>
+        let speech = new SpeechSynthesisUtterance();
+        let isSpeakingElectric = false; // Track if electric field speech is active
+        let isSpeakingMagnetic = false; // Track if magnetic field speech is active
+        
+        function createOverlayText(container, title, description, buttonId, buttonText, onClick) {
+        const overlayWrapper = document.createElement('div');
+        overlayWrapper.className = 'overlay-wrapper'; // New wrapper for proper spacing
+
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay-text';
+
+        const h2 = document.createElement('h2');
+        h2.textContent = title;
+        overlay.appendChild(h2);
+
+        const p = document.createElement('p');
+        p.textContent = description;
+        overlay.appendChild(p);
+
+        const button = document.createElement('button');
+        button.id = buttonId;
+        button.textContent = buttonText;
+        button.addEventListener('click', onClick);
+        overlay.appendChild(button);
+
+        overlayWrapper.appendChild(overlay);
+        container.appendChild(overlayWrapper);
+    }
+        function showMagneticFieldOverlay() {
+    setTimeout(() => {
+        const overlay = document.getElementById("magneticFieldOverlay");
+        overlay.style.display = "flex";
+        overlay.style.opacity = "1";
+    }, 1000); // Adjust delay as needed
+    }
+        // Electric Field Button Click Handler
+        function handleElectricFieldButtonClick() {
+            if (isSpeakingElectric) {
+                speechSynthesis.cancel(); // Stop speech
+                isSpeakingElectric = false;
+                this.textContent = "🔊 Read Electric Field Text"; // Change button text
+            } else {
+                speech.text = "The electric field between a proton and an electron points from the proton (positive charge) to the electron (negative charge). The field strength follows Coulomb’s law, decreasing with distance. The proton’s field radiates outward, while the electron’s field points inward toward it. The combined field between them points from the proton to the electron, with its strength strongest near the charges.";
+                speechSynthesis.speak(speech);
+                isSpeakingElectric = true;
+                this.textContent = "⏹ Stop Electric Field Speech"; // Change button text
+            }
+        }
+
+        // Magnetic Field Button Click Handler
+        function handleMagneticFieldButtonClick() {
+            if (isSpeakingMagnetic) {
+                speechSynthesis.cancel(); // Stop speech
+                isSpeakingMagnetic = false;
+                this.textContent = "🔊 Read Magnetic Field Text"; // Change button text
+            } else {
+                speech.text = "The magnetic field is produced by moving electric charges and is represented by magnetic field lines. The direction of the magnetic field is given by the right-hand rule, and it can exert forces on other moving charges or magnetic materials.";
+                speechSynthesis.speak(speech);
+                isSpeakingMagnetic = true;
+                this.textContent = "⏹ Stop Magnetic Field Speech"; // Change button text
+            }
+        }
+
+        // Reset state when speech ends
+        speech.onend = function () {
+            isSpeakingElectric = false;
+            isSpeakingMagnetic = false;
+            document.getElementById("readElectricFieldButton").textContent = "🔊 Read Electric Field Text";
+            document.getElementById("readMagneticFieldButton").textContent = "🔊 Read Magnetic Field Text";
+        };
+        </script>
+    
+    <script type="module">
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
+
+        function createScene(container) {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+            return { scene, camera, renderer };
+        }
+
+        function addLighting(scene) {
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+        }
+
+        // Electric Field Scene
+        const electricFieldContainer = document.createElement("div");
+        electricFieldContainer.classList.add("visualization-container");
+        document.body.appendChild(electricFieldContainer);
+
+        const electricField = createScene(document.getElementById("electricField"));
+        addLighting(electricField.scene);
+        createOverlayText(
+            electricField.renderer.domElement.parentElement,
+            "Electric Field",
+            "The electric field between a proton and an electron points from the proton (positive charge) to the electron (negative charge). The field strength follows Coulomb’s law, decreasing with distance. The proton’s field radiates outward, while the electron’s field points inward toward it. The combined field between them points from the proton to the electron, with its strength strongest near the charges.",
+            "readElectricFieldButton",
+            "🔊 Read Electric Field Text",
+            handleElectricFieldButtonClick
+        );
+        const chargeGeometry = new THREE.SphereGeometry(0.5, 16, 20);
+        const chargeMaterialPositive = new THREE.MeshStandardMaterial({ color: 'blue' });
+        const chargeMaterialNegative = new THREE.MeshStandardMaterial({ color: 'red' });
+        
+        const positiveCharge = new THREE.Mesh(chargeGeometry, chargeMaterialPositive);
+        positiveCharge.position.set(4, -1, 0); 
+        electricField.scene.add(positiveCharge);
+
+        const negativeCharge = new THREE.Mesh(chargeGeometry, chargeMaterialNegative);
+        negativeCharge.position.set(-4, -1, 0);
+        electricField.scene.add(negativeCharge);
+
+        // Function to create text as a sprite
+        function createTextSprite(text, color) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 256;
+
+            // Clear background and set text properties
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '100px Arial';
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+            // Create texture from canvas
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(2.5, 1.25, 1);
+            return sprite;
+        }
+
+        // Add Text for Charges
+        const electronText = createTextSprite('e-', 'blue');
+        electronText.position.set(-4, 0, 0.1);
+        electricField.scene.add(electronText);
+
+        const protonText = createTextSprite('p+', 'red');
+        protonText.position.set(4, 0, 0.1);
+        electricField.scene.add(protonText);
+
+        electricField.camera.position.z = 8;
+
+        // Adding animated electric field arrows
+        const eFieldArrows = [];
+        for (let i = -2; i <= 2; i += 1) {
+            let start = new THREE.Vector3(4, i, 0);
+            let end = new THREE.Vector3(-4, i * 0.2, 0);
+            let dir = new THREE.Vector3().subVectors(end, start).normalize();
+            let arrow = new THREE.ArrowHelper(dir, start, 1.5, 'yellow');
+            electricField.scene.add(arrow);
+            eFieldArrows.push(arrow);
+        }
+
+        // Magnetic Field Scene
+        const magneticField = createScene(document.getElementById("magneticField"));
+        addLighting(magneticField.scene);
+        createOverlayText(
+            magneticField.renderer.domElement.parentElement,
+            "Magnetic Field",
+            "The magnetic field is produced by moving electric charges and is represented by magnetic field lines. The direction of the magnetic field is given by the right-hand rule, and it can exert forces on other moving charges or magnetic materials.",
+            "readMagneticFieldButton",
+            "🔊 Read Magnetic Field Text",
+            handleMagneticFieldButtonClick
+        );
+
+        const barMagnet = new THREE.BoxGeometry(6, 1, 1);
+        const barMagnetMaterial = new THREE.MeshStandardMaterial({ color: 'gray' });
+        const barMagnetMesh = new THREE.Mesh(barMagnet, barMagnetMaterial);
+        magneticField.scene.add(barMagnetMesh);
+
+        // Add Text for Magnetic Field (North and South Poles)
+const northPoleText = createTextSprite('N', 'red');  // Red for North
+northPoleText.position.set(-3, 1, 0.1); // Adjust position for clarity
+magneticField.scene.add(northPoleText);
+
+const southPoleText = createTextSprite('S', 'blue');  // Blue for South
+southPoleText.position.set(3, 1, 0.1); // Adjust position for clarity
+magneticField.scene.add(southPoleText);
+
+        // Adding moving magnetic field arrows on top
+        const mFieldArrows = [];
+        for (let i = -2; i <= 2; i += 1) {
+            let start = new THREE.Vector3(-2, i + 1.5, 0);
+            let end = new THREE.Vector3(2, i + 1.5, 0);
+            let dir = new THREE.Vector3().subVectors(end, start).normalize();
+            let arrow = new THREE.ArrowHelper(dir, start, 1, 'blue');
+            magneticField.scene.add(arrow);
+            mFieldArrows.push(arrow);
+        }
+
+        magneticField.camera.position.z = 8;
+
+        // Electromagnetic Wave Scene
+        
+        const emWave = createScene(document.getElementById("emWave"));
+
+        const wavePointsE = [];
+        const wavePointsB = [];
+        let frequency = 1;  // Default frequency
+        let wavelength = 4; // Default wavelength
+        // Update sliders dynamically
+        document.getElementById("freqSlider").addEventListener("input", (event) => {
+        frequency = parseFloat(event.target.value);
+        document.getElementById("freqValue").textContent = frequency + " Hz"; // Display updated value
+        });
+
+        document.getElementById("waveSlider").addEventListener("input", (event) => {
+        wavelength = parseFloat(event.target.value);
+        document.getElementById("waveValue").textContent = wavelength; // Display updated value
+        });
+
+        for (let i = -10; i <= 10; i += 0.5) {
+    let k = (2 * Math.PI) / wavelength; // Wave number
+    let omega = 2 * Math.PI * frequency; // Angular frequency
+    let t = 0; // Time variable (update in animation)
+
+    wavePointsE.push(new THREE.Vector3(i, Math.sin(k * i - omega * t), 0));
+    wavePointsB.push(new THREE.Vector3(i, 0, Math.sin(k * i - omega * t)));
+    }
+        const waveGeometryE = new THREE.BufferGeometry().setFromPoints(wavePointsE);
+        const waveMaterialE = new THREE.LineBasicMaterial({ color: 'green' });
+        const electricWave = new THREE.Line(waveGeometryE, waveMaterialE);
+        emWave.scene.add(electricWave);
+
+        const waveGeometryB = new THREE.BufferGeometry().setFromPoints(wavePointsB);
+        const waveMaterialB = new THREE.LineBasicMaterial({ color: 'purple' });
+        const magneticWave = new THREE.Line(waveGeometryB, waveMaterialB);
+        emWave.scene.add(magneticWave);
+
+        emWave.camera.position.z = 8;
+
+    function animate() {
+    requestAnimationFrame(animate);
+
+    const time = Date.now() * 0.002;
+    const k = (2 * Math.PI) / wavelength; // Wave number (depends on wavelength)
+    const omega = 2 * Math.PI * frequency; // Angular frequency (depends on frequency)
+
+    for (let i = 0; i < wavePointsE.length; i++) {
+        let x = wavePointsE[i].x;
+
+        // Animate electric wave along y and z axes
+        wavePointsE[i].y = Math.sin(k * x - omega * time) * 2; 
+        wavePointsE[i].z = Math.cos(k * x - omega * time) * 0.5;
+
+        // Animate magnetic wave along y and z axes
+        wavePointsB[i].y = Math.cos(k * x - omega * time) * 0.5; 
+        wavePointsB[i].z = Math.sin(k * x - omega * time) * 2;
+    }
+
+    waveGeometryE.setFromPoints(wavePointsE);
+    waveGeometryB.setFromPoints(wavePointsB);
+
+    // **Animate electric field arrows smoothly**
+    eFieldArrows.forEach((arrow) => {
+        arrow.position.x -= 0.02 * frequency; // Adjust movement speed based on frequency
+        if (arrow.position.x < -4) arrow.position.x = 4;
+    });
+
+    // **Animate magnetic field arrows smoothly**
+    mFieldArrows.forEach((arrow) => {
+        arrow.position.x += 0.02 * frequency; // Adjust movement speed based on frequency
+        if (arrow.position.x > 2) arrow.position.x = -2;
+    });
+
+    // **Render scenes**
+    electricField.renderer.render(electricField.scene, electricField.camera);
+    magneticField.renderer.render(magneticField.scene, magneticField.camera);
+    emWave.renderer.render(emWave.scene, emWave.camera);
+}
+
+animate();
+
+    </script>
+</body>
+</html>
